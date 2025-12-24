@@ -21,3 +21,13 @@ target_link_libraries(rlwe
         OpenSSL::SSL 
         OpenSSL::Crypto
 )
+
+# ---------------------------------------------------------------------------
+# Attack / demo binaries
+# ---------------------------------------------------------------------------
+
+add_executable(oracle_cca
+    ${CMAKE_SOURCE_DIR}/attacks/oracle_cca.cpp
+)
+
+target_link_libraries(oracle_cca PRIVATE rlwe)

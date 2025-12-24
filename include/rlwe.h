@@ -206,6 +206,15 @@ public:
      */
     static RLWEParams getParameterSet(SecurityLevel level);
 
+    /**
+     * @brief Expose the secret key polynomial for testing/attacks.
+     *
+     * WARNING: This must never be used in production code. It is
+     * provided solely to allow experiments like oracle_cca to
+     * compare their recovered secret against the ground truth.
+     */
+    Polynomial getSecretKeyForTesting() const { return s; }
+
 private:
     size_t ring_dim_n;
     uint64_t modulus;
