@@ -2,59 +2,6 @@
 #include <stdexcept>
 #include <ntt.h>
 
-/*
-static Polynomial multiplySchoolbook(const Polynomial& a,
-                                     const Polynomial& b) {
-    const std::size_t n = a.degree();
-    const std::uint64_t q = a.getModulus();
-
-    if (n != b.degree() || q != b.getModulus()) {
-        throw std::invalid_argument("Polynomials must be in the same ring");
-    }
-
-    Logger::log("[Schoolbook] Multiplying polynomials:\n  " + a.toString() +
-                "\n  " + b.toString());
-
-    const auto& a_coeffs = a.getCoeffs();
-    const auto& b_coeffs = b.getCoeffs();
-
-    std::vector<std::uint64_t> temp(2 * n, 0);
-
-    for (std::size_t i = 0; i < n; i++) {
-        for (std::size_t j = 0; j < n; j++) {
-            std::uint64_t prod =
-                (static_cast<std::uint64_t>(a_coeffs[i]) *
-                 static_cast<std::uint64_t>(b_coeffs[j])) % q;
-            temp[i + j] = (temp[i + j] + prod) % q;
-        }
-    }
-
-    Logger::log("[Schoolbook] Intermediate multiplication result:\n  " +
-                Logger::vectorToString(temp, "  temp = "));
-
-    Polynomial result(n, q);
-    for (std::size_t i = 0; i < n; i++) {
-        std::uint64_t coeff = temp[i];
-        std::size_t higher_degree = i + n;
-        while (higher_degree < temp.size()) {
-            // Reduce modulo x^n + 1 via c_i <- c_i - c_{i + kn} (mod q).
-            const std::int64_t diff = static_cast<std::int64_t>(coeff) -
-                                      static_cast<std::int64_t>(temp[higher_degree]);
-            const std::int64_t m = static_cast<std::int64_t>(q);
-            std::int64_t r = diff % m;
-            if (r < 0) r += m;
-            coeff = static_cast<std::uint64_t>(r);
-            higher_degree += n;
-        }
-        result[i] = coeff;
-    }
-
-    Logger::log("[Schoolbook] Final multiplication result after reduction:\n  " +
-                result.toString());
-    return result;
-}
-*/
-
 Polynomial Polynomial::polySignal() const {
     Polynomial result(ring_dim, modulus);
     uint64_t half_mod = modulus / 2;
@@ -159,4 +106,40 @@ Polynomial Polynomial::operator*(uint64_t scalar) const {
 
     Logger::log("Scalar multiplication result:\n  " + result.toString());
     return result;
+}
+
+void Polynomial::setCoefficients(const std::vector<uint64_t>& new_coeffs) {
+    if (new_coeffs.size() != ring_dim) {
+        throw std::invalid_argument("New coefficient vector size must match polynomial ring dimension");
+    }
+    coeffs = new_coeffs;
+    for (auto& c : coeffs) {
+        c = mod(c, modulus);
+    }
+    Logger::log("Updated polynomial coefficients to: " + Logger::vectorToString(coeffs));
+}
+
+std::string Polynomial::toString() const {
+    std::stringstream ss;
+    ss << "Polynomial(dim=" << ring_dim << ", q=" << modulus << "): ";
+    ss << Logger::vectorToString(coeffs);
+    return ss.str();
+}
+
+std::vector<uint8_t> Polynomial::toBytes() const {
+    std::vector<uint8_t> bytes;
+    bytes.reserve(sizeof(size_t) + sizeof(uint64_t) + coeffs.size() * sizeof(uint64_t));
+
+    const uint8_t* dim_bytes = reinterpret_cast<const uint8_t*>(&ring_dim);
+    bytes.insert(bytes.end(), dim_bytes, dim_bytes + sizeof(size_t));
+
+    const uint8_t* mod_bytes = reinterpret_cast<const uint8_t*>(&modulus);
+    bytes.insert(bytes.end(), mod_bytes, mod_bytes + sizeof(uint64_t));
+
+    for (const uint64_t& coeff : coeffs) {
+        const uint8_t* coeff_bytes = reinterpret_cast<const uint8_t*>(&coeff);
+        bytes.insert(bytes.end(), coeff_bytes, coeff_bytes + sizeof(uint64_t));
+    }
+
+    return bytes;
 }

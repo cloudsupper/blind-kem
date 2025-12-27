@@ -1,5 +1,5 @@
 #include <polynomial.h>
-#include <rlwe.h>
+#include <kem.h>
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
@@ -46,13 +46,13 @@ static void getSecureRandomBytes(uint8_t* buffer, size_t length) {
 #endif
 }
 
-uint64_t BlindKEM::getRandomUint64() {
+uint64_t KEM::getRandomUint64() {
     uint64_t result;
     getSecureRandomBytes(reinterpret_cast<uint8_t*>(&result), sizeof(result));
     return result;
 }
 
-double BlindKEM::getRandomDouble() {
+double KEM::getRandomDouble() {
     uint64_t r1, r2;
     getSecureRandomBytes(reinterpret_cast<uint8_t*>(&r1), sizeof(r1));
     getSecureRandomBytes(reinterpret_cast<uint8_t*>(&r2), sizeof(r2));
@@ -93,7 +93,7 @@ static bool validatePowerOfTwo(size_t n) {
 #endif
 }
 
-RLWEParams BlindKEM::getParameterSet(SecurityLevel level) {
+RLWEParams KEM::getParameterSet(SecurityLevel level) {
     switch (level) {
         case SecurityLevel::TEST_TINY:
             return {8, 7681, 3.0, "TEST_TINY (INSECURE)", 4, 2, false};
@@ -115,7 +115,7 @@ RLWEParams BlindKEM::getParameterSet(SecurityLevel level) {
     }
 }
 
-BlindKEM::BlindKEM(size_t n, uint64_t q, double sigma)
+KEM::KEM(size_t n, uint64_t q, double sigma)
     : ring_dim_n(n),
       modulus(q),
       gaussian_stddev(sigma > 0 ? sigma : 3.2),
@@ -133,7 +133,7 @@ BlindKEM::BlindKEM(size_t n, uint64_t q, double sigma)
     validateSecurityParameters();
 }
 
-BlindKEM::BlindKEM(SecurityLevel level) 
+KEM::KEM(SecurityLevel level) 
     : ring_dim_n(0),
       modulus(0),
       gaussian_stddev(0),
@@ -180,7 +180,7 @@ BlindKEM::BlindKEM(SecurityLevel level)
     validateSecurityParameters();
 }
 
-RLWEParams BlindKEM::getParameters() const {
+RLWEParams KEM::getParameters() const {
     RLWEParams params;
     params.n = ring_dim_n;
     params.q = modulus;
@@ -204,7 +204,7 @@ RLWEParams BlindKEM::getParameters() const {
     return params;
 }
 
-void BlindKEM::validateSecurityParameters() {
+void KEM::validateSecurityParameters() {
     double alpha = gaussian_stddev / modulus;
     
     Logger::log("\nValidating security parameters...");
@@ -233,7 +233,7 @@ void BlindKEM::validateSecurityParameters() {
     Logger::log("Parameter validation complete.\n");
 }
 
-void BlindKEM::generateKeys() {
+void KEM::generateKeys() {
     Logger::log("\nGenerating keys...");
     a = sampleUniform();
     s = sampleGaussian(gaussian_stddev);
@@ -249,81 +249,7 @@ void BlindKEM::generateKeys() {
     Logger::log("Secret key s: " + s.toString());
 }
 
-std::pair<Polynomial, Polynomial> BlindKEM::computeBlindedMessage(const std::vector<uint8_t>& secret) {
-    Logger::log("\nComputing blinded message...");
-    
-    Polynomial r = sampleGaussian(gaussian_stddev);
-    Logger::log("Random blinding factor r: " + r.toString());
-    
-    Polynomial Y = hashToPolynomial(secret);
-    Logger::log("Hashed secret Y: " + Y.toString());
-    
-    Polynomial blindedMessage = Y + a * r;
-    Logger::log("Blinded message (Y + a*r): " + blindedMessage.toString());
-    
-    return std::make_pair(blindedMessage, r);
-}
-
-Polynomial BlindKEM::blindSign(const Polynomial& blindedMessagePoly) {
-    Logger::log("\nPerforming blind signing...");
-    Logger::log("Blinded message received: " + blindedMessagePoly.toString());
-    
-    Polynomial e1 = sampleGaussian(gaussian_stddev);
-
-    Polynomial signature = s * blindedMessagePoly + e1;
-    Logger::log("Computed blind signature (s * blinded_message + e1): " + signature.toString());
-    
-    return signature;
-}
-
-bool BlindKEM::verify(const std::vector<uint8_t>& message,
-                          const Polynomial& signature) {
-    Logger::log("\nVerifying signature...");
-    logMessageBytes("Message", message);
-    Logger::log("Signature to verify: " + signature.toString());
-    
-    Polynomial z = hashToPolynomial(message);
-    Logger::log("Hashed message z: " + z.toString());
-    
-    Polynomial expected = s * z;
-    Logger::log("Expected value (s*z): " + expected.toString());
-
-    Polynomial actual_signal = signature.polySignal();
-    Polynomial expected_signal = expected.polySignal();
-    
-    Logger::log("Rounded signature: " + actual_signal.toString());
-    Logger::log("Rounded expected: " + expected_signal.toString());
-
-    const auto& actual_coeffs = actual_signal.getCoeffs();
-    const auto& expected_coeffs = expected_signal.getCoeffs();
-    
-    bool result = true;
-    for (size_t i = 0; i < actual_coeffs.size(); i++) {
-        if (actual_coeffs[i] != expected_coeffs[i]) {
-            Logger::log("Mismatch at coefficient " + std::to_string(i) + 
-                       ": actual=" + std::to_string(actual_coeffs[i]) + 
-                       ", expected=" + std::to_string(expected_coeffs[i]));
-            result = false;
-            break;
-        }
-    }
-    
-    Logger::log("Verification result: " + std::string(result ? "SUCCESS" : "FAILED"));
-    return result;
-}
-
-Polynomial BlindKEM::computeSignature(
-    const Polynomial& blindSignature,
-    const Polynomial& blindingFactor,
-    const Polynomial& publicKey
-) {
-    const auto& C_ = blindSignature;
-    const auto& r = blindingFactor;
-    const auto& A = publicKey;
-    return C_ - r*A;
-}
-
-Polynomial BlindKEM::sampleUniform() {
+Polynomial KEM::sampleUniform() {
     std::vector<uint64_t> coeffs(ring_dim_n);
     
     for (size_t i = 0; i < ring_dim_n; i++) {
@@ -333,7 +259,7 @@ Polynomial BlindKEM::sampleUniform() {
     return Polynomial(coeffs, modulus);
 }
 
-Polynomial BlindKEM::sampleGaussian(double stddev) {
+Polynomial KEM::sampleGaussian(double stddev) {
     std::vector<uint64_t> coeffs(ring_dim_n);
     
     for (size_t i = 0; i < ring_dim_n; i++) {
@@ -344,13 +270,13 @@ Polynomial BlindKEM::sampleGaussian(double stddev) {
             rounded += modulus;
         }
         
-        coeffs[i] = rounded % modulus;
+        coeffs[i] = rounded;
     }
     
     return Polynomial(coeffs, modulus);
 }
 
-Polynomial BlindKEM::messageToPolynomial(const std::vector<uint8_t>& message) {
+Polynomial KEM::messageToPolynomial(const std::vector<uint8_t>& message) {
     std::vector<uint64_t> coeffs(ring_dim_n, 0);
     
     size_t coeff_idx = 0;
@@ -364,7 +290,7 @@ Polynomial BlindKEM::messageToPolynomial(const std::vector<uint8_t>& message) {
     return Polynomial(coeffs, modulus);
 }
 
-Polynomial BlindKEM::hashToPolynomial(const std::vector<uint8_t>& message) {
+Polynomial KEM::hashToPolynomial(const std::vector<uint8_t>& message) {
     Logger::log("\nConverting message to polynomial using counter-based hashing");
     logMessageBytes("Input message", message);
     

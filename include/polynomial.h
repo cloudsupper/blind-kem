@@ -177,16 +177,7 @@ public:
      * @throws std::invalid_argument If @p new_coeffs has a different size
      *         than the ring dimension.
      */
-    void setCoefficients(const std::vector<uint64_t>& new_coeffs) {
-        if (new_coeffs.size() != ring_dim) {
-            throw std::invalid_argument("New coefficient vector size must match polynomial ring dimension");
-        }
-        coeffs = new_coeffs;
-        for (auto& c : coeffs) {
-            c = mod(c, modulus);
-        }
-        Logger::log("Updated polynomial coefficients to: " + Logger::vectorToString(coeffs));
-    }
+    void setCoefficients(const std::vector<uint64_t>& new_coeffs);
 
     /**
      * @brief Convert the polynomial to a human-readable string.
@@ -196,12 +187,7 @@ public:
      *
      * @return Descriptive string representation.
      */
-    std::string toString() const {
-        std::stringstream ss;
-        ss << "Polynomial(dim=" << ring_dim << ", q=" << modulus << "): ";
-        ss << Logger::vectorToString(coeffs);
-        return ss.str();
-    }
+    std::string toString() const;
 
     /**
      * @brief Serialize the polynomial to a byte vector.
@@ -215,23 +201,7 @@ public:
      *
      * @return Contiguous byte representation of the polynomial.
      */
-    std::vector<uint8_t> toBytes() const {
-        std::vector<uint8_t> bytes;
-        bytes.reserve(sizeof(size_t) + sizeof(uint64_t) + coeffs.size() * sizeof(uint64_t));
-
-        const uint8_t* dim_bytes = reinterpret_cast<const uint8_t*>(&ring_dim);
-        bytes.insert(bytes.end(), dim_bytes, dim_bytes + sizeof(size_t));
-
-        const uint8_t* mod_bytes = reinterpret_cast<const uint8_t*>(&modulus);
-        bytes.insert(bytes.end(), mod_bytes, mod_bytes + sizeof(uint64_t));
-
-        for (const uint64_t& coeff : coeffs) {
-            const uint8_t* coeff_bytes = reinterpret_cast<const uint8_t*>(&coeff);
-            bytes.insert(bytes.end(), coeff_bytes, coeff_bytes + sizeof(uint64_t));
-        }
-
-        return bytes;
-    }
+    std::vector<uint8_t> toBytes() const;
 
 private:
     /**

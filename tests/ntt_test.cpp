@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <rlwe.h>
+#include <kem.h>
 #include <ntt.h>
 
 #include <random>
@@ -72,17 +72,17 @@ static void check_ntt_roundtrip_for_params(const RLWEParams& params,
 TEST(NTTTest, RoundtripAllSecurityLevels) {
     // Test Tiny / Small (insecure, but good for fast tests)
     check_ntt_roundtrip_for_params(
-        BlindKEM::getParameterSet(SecurityLevel::TEST_TINY), 0xA1B2C3D4ULL);
+        KEM::getParameterSet(SecurityLevel::TEST_TINY), 0xA1B2C3D4ULL);
     check_ntt_roundtrip_for_params(
-        BlindKEM::getParameterSet(SecurityLevel::TEST_SMALL), 0xBEEF1234ULL);
+        KEM::getParameterSet(SecurityLevel::TEST_SMALL), 0xBEEF1234ULL);
 
     // Kyber-like 128-bit, NTT-friendly parameters
     check_ntt_roundtrip_for_params(
-        BlindKEM::getParameterSet(SecurityLevel::KYBER512), 0x12345678ULL);
+        KEM::getParameterSet(SecurityLevel::KYBER512), 0x12345678ULL);
 
     // Moderate and High security levels
     check_ntt_roundtrip_for_params(
-        BlindKEM::getParameterSet(SecurityLevel::MODERATE), 0xCAFEBABEULL);
+        KEM::getParameterSet(SecurityLevel::MODERATE), 0xCAFEBABEULL);
     check_ntt_roundtrip_for_params(
-        BlindKEM::getParameterSet(SecurityLevel::HIGH), 0xDEADBEEFULL);
+        KEM::getParameterSet(SecurityLevel::HIGH), 0xDEADBEEFULL);
 }

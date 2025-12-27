@@ -8,8 +8,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 # Add test executable
-add_executable(rlwe_tests
-    rlwe_test.cpp
+add_executable(kem_tests
     polynomial_test.cpp
     sha256_test.cpp
     ntt_test.cpp
@@ -17,11 +16,11 @@ add_executable(rlwe_tests
 )
 
 # Link against Google Test and our library
-target_link_libraries(rlwe_tests
+target_link_libraries(kem_tests
     PRIVATE
         gtest_main
-        rlwe
+        kem
 )
 
 # Add the test to CTest
-add_test(NAME rlwe_tests COMMAND rlwe_tests)
+add_test(NAME kem_tests COMMAND kem_tests)

@@ -5,7 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(rlwe-signature 
         VERSION 0.1.0
-        DESCRIPTION "RLWE Signature Scheme Implementation"
+        DESCRIPTION "RLWE Based KEM Scheme Implementation"
         LANGUAGES CXX)
 
 # Require C++17 for better type support and features

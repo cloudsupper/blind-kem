@@ -13,6 +13,6 @@ cmake ..
 cmake --build . -j$(nproc)
 
 # Run tests if they were built
-if [ -f tests/rlwe_tests ]; then
+if [ -f tests/kem_tests ]; then
     ctest --output-on-failure
 fi

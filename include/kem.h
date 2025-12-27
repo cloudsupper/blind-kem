@@ -81,14 +81,14 @@ struct RLWEParams {
 /**
  * @brief RLWE-based blind signature scheme implementation.
  *
- * This class implements a simple RLWE blind signature construction
- * over the ring @f$Z_q[x]/(x^n + 1)@f$. It supports key generation,
- * message blinding, blind signing, and verification.
+ * This class implements the Key-Encapsulation procedure
+ * over the ring @f$Z_q[x]/(x^n + 1)@f$. It supports key generation
+ * and handshake.
  */
-class BlindKEM {
+class KEM {
 public:
     /**
-     * @brief Construct an RLWE instance with explicit parameters.
+     * @brief Construct a KEM instance with explicit parameters.
      *
      * @param n Ring dimension (must be a power of two).
      * @param q Coefficient modulus.
@@ -98,7 +98,7 @@ public:
      *
      * @throws std::invalid_argument If @p n is not a power of two.
      */
-    BlindKEM(size_t n, uint64_t q, double sigma = 0.0);
+    KEM(size_t n, uint64_t q, double sigma = 0.0);
 
     /**
      * @brief Construct an RLWE instance from a named security level.
@@ -112,7 +112,7 @@ public:
      * @throws std::invalid_argument If the derived ring dimension is
      *         not a power of two.
      */
-    explicit BlindKEM(SecurityLevel level = SecurityLevel::KYBER512);
+    explicit KEM(SecurityLevel level = SecurityLevel::KYBER512);
 
     /**
      * @brief Generate a fresh key pair.
@@ -122,29 +122,6 @@ public:
      * polynomial @f$e@f$. The public key is @f$(a, b = a s + e)@f$.
      */
     void generateKeys();
-
-    /**
-     * @brief Compute a blind signature on a blinded message polynomial.
-     *
-     * @param blindedMessage Blinded message polynomial.
-     * @return Blind signature polynomial.
-     */
-    Polynomial blindSign(const Polynomial& blindedMessage);
-
-    /**
-     * @brief Verify a signature on a message.
-     *
-     * The message is first hashed to a polynomial, and the signature
-     * is checked against the expected value derived from the secret
-     * key. Verification is performed in a noise-tolerant manner using
-     * a binary signal representation.
-     *
-     * @param secret Message bytes to verify.
-     * @param signature Signature polynomial.
-     * @return true if the signature is accepted, false otherwise.
-     */
-    bool verify(const std::vector<uint8_t>& secret,
-                const Polynomial& signature);
 
     /**
      * @brief Retrieve the public key.
@@ -165,31 +142,6 @@ public:
      * @return Polynomial representation of the hash.
      */
     Polynomial hashToPolynomial(const std::vector<uint8_t>& message);
-
-    /**
-     * @brief Compute a blinded message polynomial and blinding factor.
-     *
-     * Given a message, this method samples a blinding factor and
-     * returns the blinded message as well as the factor required to
-     * unblind the final signature.
-     *
-     * @param secret Message to blind.
-     * @return Pair (blindedMessage, blindingFactor).
-     */
-    std::pair<Polynomial, Polynomial> computeBlindedMessage(const std::vector<uint8_t>& secret);
-
-    /**
-     * @brief Compute the final signature from a blind signature.
-     *
-     * @param blindSignature Signature on the blinded message.
-     * @param blindingFactor Blinding factor used when creating
-     *        the blinded message.
-     * @param publicKey Public key component used for unblinding.
-     * @return Unblinded signature polynomial.
-     */
-    Polynomial computeSignature(const Polynomial& blindSignature,
-                                const Polynomial& blindingFactor,
-                                const Polynomial& publicKey);
 
     /**
      * @brief Get the current effective parameters.
